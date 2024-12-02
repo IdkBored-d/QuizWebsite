@@ -1,7 +1,7 @@
 <?php
     const DB_SERVER = "localhost";
     const DB_USER = "root";
-    const DB_PASSWORD = "Dh.219574787";
+    const DB_PASSWORD = "";
     const DB_NAME = "finalproject";
 
     function getDB(){
