@@ -1,6 +1,7 @@
 <?php
 // Initialize the session
 global $pdo;
+require 'config.php';
 session_start();
 
 // Check if the user is already logged in, if yes then redirect him to welcome page

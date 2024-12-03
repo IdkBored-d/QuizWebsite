@@ -1,7 +1,7 @@
 <?php
 // Include config file
 global $pdo;
-require_once "config.php";
+require "config.php";
 
 // Define variables and initialize with empty values
 $username = $password = $confirm_password = "";

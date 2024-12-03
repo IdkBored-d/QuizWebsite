@@ -1,6 +1,7 @@
 <?php
 // Initialize the session
 global $pdo;
+require 'config.php';
 session_start();
 
 // Check if the user is logged in, otherwise redirect to login page
