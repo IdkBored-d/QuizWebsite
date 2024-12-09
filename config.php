@@ -3,26 +3,23 @@ $db_host = 'localhost';
 $db_user = 'root';
 $db_password = 'root';
 $db_db = 'finalproject';
-$db_port = 3306;
+$db_charset = 'utf8mb4';
 
-$pdo = new mysqli(
-    $db_host,
-    $db_user,
-    $db_password,
-    $db_db
-);
+$dsn = "mysql:host=$db_host;dbname=$db_db;charset=$db_charset";
 
-if ($pdo->connect_error) {
-    echo 'Errno: ' . $pdo->connect_errno;
-    echo '<br>';
-    echo 'Error: ' . $pdo->connect_error;
+try {
+    // Create a PDO instance
+    $pdo = new PDO($dsn, $db_user, $db_password);
+
+    // Set PDO error mode to exception
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    echo 'Success: A proper connection to MySQL was made.<br>';
+    echo 'Database: ' . $db_db . '<br>';
+    echo 'Connection Charset: ' . $db_charset . '<br>';
+} catch (PDOException $e) {
+    // Handle connection errors
+    echo 'Connection failed: ' . $e->getMessage();
     exit();
 }
-
-echo 'Success: A proper connection to MySQL was made.';
-echo '<br>';
-echo 'Host information: ' . $pdo->host_info;
-echo '<br>';
-echo 'Protocol version: ' . $pdo->protocol_version;
-
-$pdo->close();
+?>
