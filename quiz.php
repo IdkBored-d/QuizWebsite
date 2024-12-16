@@ -4,24 +4,27 @@ global $pdo;
 require 'config.php';
 session_start();
 
-// Check if the user is logged in; if not, redirect to login
-if (!isset($_SESSION['user_id'])) {
+// Ensure the user is logged in
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header('Location: login.php');
     exit();
 }
 
-// Validate quiz_id from GET parameters
+// Check if the quiz_id is provided in the query string
 if (!isset($_GET['quiz_id']) || !is_numeric($_GET['quiz_id'])) {
-    echo "Invalid quiz ID.";
+    echo "Invalid quiz selected.";
     exit();
 }
 
-$quiz_id = (int) $_GET['quiz_id'];
+// Retrieve the quiz_id
+$quiz_id = intval($_GET['quiz_id']);
 
 try {
-    // Fetch the quiz details
-    $stmt = $pdo->prepare("SELECT name FROM quizzes WHERE id = :quiz_id");
-    $stmt->execute(['quiz_id' => $quiz_id]);
+    // Fetch the quiz details and questions
+    $stmt = $pdo->prepare("SELECT * FROM quizzes WHERE id = :quiz_id");
+    $stmt->bindParam(':quiz_id', $quiz_id, PDO::PARAM_INT);
+    $stmt->execute();
+
     $quiz = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$quiz) {
@@ -29,25 +32,19 @@ try {
         exit();
     }
 
-    // Fetch questions and answers for the quiz
-    $stmt = $pdo->prepare("SELECT id, id FROM questions WHERE quiz_id = :quiz_id");
-    $stmt->execute(['quiz_id' => $quiz_id]);
+    // Fetch questions for the selected quiz
+    $stmt = $pdo->prepare("SELECT * FROM questions WHERE quiz_id = :quiz_id");
+    $stmt->bindParam(':quiz_id', $quiz_id, PDO::PARAM_INT);
+    $stmt->execute();
+
     $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if (!$questions) {
+    if (empty($questions)) {
         echo "No questions available for this quiz.";
         exit();
     }
-
-    // Fetch answers for each question
-    $answers = [];
-    foreach ($questions as $question) {
-        $stmt = $pdo->prepare("SELECT id, text FROM answers WHERE question_id = :question_id");
-        $stmt->execute(['question_id' => $question['id']]);
-        $answers[$question['id']] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
 } catch (PDOException $e) {
-    echo "Error: " . htmlspecialchars($e->getMessage());
+    echo "Error fetching quiz: " . htmlspecialchars($e->getMessage());
     exit();
 }
 ?>
@@ -56,38 +53,36 @@ try {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($quiz['name']) ?></title>
+    <title><?= htmlspecialchars($quiz['name']) ?> - Quiz</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
 <div class="container mt-5">
     <h1><?= htmlspecialchars($quiz['name']) ?></h1>
-    <form action="submit_quiz.php" method="POST">
-        <?php foreach ($questions as $question): ?>
-            <div class="mb-4">
-                <h5><?= htmlspecialchars($question['question']) ?></h5>
-                <?php if (!empty($answers[$question['id']])): ?>
-                    <?php foreach ($answers[$question['id']] as $answer): ?>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="question_<?= $question['id'] ?>"
-                                   id="answer_<?= $answer['id'] ?>" value="<?= $answer['id'] ?>">
-                            <label class="form-check-label" for="answer_<?= $answer['id'] ?>">
-                                <?= htmlspecialchars($answer['answer_text']) ?>
-                            </label>
-                        </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p>No answers available for this question.</p>
-                <?php endif; ?>
+    <p><?= htmlspecialchars($quiz['description']) ?></p>
+
+    <form action="submit_quiz.php" method="post">
+        <?php foreach ($questions as $index => $question): ?>
+            <div class="mb-3">
+                <h4>Question <?= $index + 1 ?>: <?= htmlspecialchars($question['question_text']) ?></h4>
+                <?php
+                // Assuming options are stored in JSON format
+                $options = json_decode($question['options'], true);
+                foreach ($options as $option_key => $option_value):
+                    ?>
+                    <div class="form-check">
+                        <input type="radio" name="answers[<?= $question['id'] ?>]" value="<?= htmlspecialchars($option_key) ?>" class="form-check-input" id="q<?= $question['id'] ?>_<?= $option_key ?>">
+                        <label class="form-check-label" for="q<?= $question['id'] ?>_<?= $option_key ?>">
+                            <?= htmlspecialchars($option_value) ?>
+                        </label>
+                    </div>
+                <?php endforeach; ?>
             </div>
         <?php endforeach; ?>
+
         <input type="hidden" name="quiz_id" value="<?= $quiz_id ?>">
         <button type="submit" class="btn btn-primary">Submit Quiz</button>
     </form>
-    <div class="mt-4">
-        <a href="welcome.php" class="btn btn-secondary">Back to Dashboard</a>
-    </div>
 </div>
 </body>
 </html>
