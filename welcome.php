@@ -4,11 +4,21 @@ global $pdo;
 require 'config.php';
 session_start();
 
-// Check if the user is logged in; if not, redirect to login
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    echo "Redirecting to login.php";
+    header("location: login.php");
+} else {
+    echo "Displaying welcome page";
 }
+
+// Check if the user is logged in; if not, redirect to login
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
+    header("location: login.php");
+    exit;
+}
+
+// Display welcome content
+echo "Welcome, " . htmlspecialchars($_SESSION["username"]);
 
 try {
     // Fetch all quizzes from the database

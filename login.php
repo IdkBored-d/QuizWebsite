@@ -4,6 +4,14 @@ global $pdo;
 require 'config.php';  // Ensure $pdo is properly initialized from config
 session_start();  // Start the session at the beginning of the script
 
+if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true) {
+    echo "Redirecting to welcome.php";
+    exit();
+    header("location: welcome.php");
+} else {
+    echo "Displaying login page";
+}
+
 // Check if the user is already logged in, if yes then redirect them to the welcome page
 if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true) {
     header("location: welcome.php");
